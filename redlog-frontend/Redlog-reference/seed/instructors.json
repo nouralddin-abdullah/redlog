@@ -1,0 +1,82 @@
+[
+  {
+    "id": "inst-1",
+    "email": "sami.hassan@radlog.example",
+    "username": "drsami",
+    "nickName": "د. سامي حسن",
+    "role": "INSTRUCTOR",
+    "country": "EG",
+    "timezone": "Africa/Cairo",
+    "bio": "استشاري الأشعة التشخيصية - جامعة القاهرة. أكثر من 15 سنة خبرة، عضو الجمعية الأوروبية للأشعة (ESR)."
+  },
+  {
+    "id": "inst-2",
+    "email": "mona.farouk@radlog.example",
+    "username": "drmona",
+    "nickName": "د. منى فاروق",
+    "role": "INSTRUCTOR",
+    "country": "EG",
+    "timezone": "Africa/Cairo",
+    "bio": "استشارية أشعة الصدر، خبرة 12 سنة في تشخيص الأمراض الصدرية والرئوية."
+  },
+  {
+    "id": "inst-3",
+    "email": "kareem.abdullah@radlog.example",
+    "username": "drkareem",
+    "nickName": "د. كريم عبدالله",
+    "role": "INSTRUCTOR",
+    "country": "SA",
+    "timezone": "Asia/Riyadh",
+    "bio": "أخصائي الرنين المغناطيسي MRI، حاصل على الزمالة الأمريكية في الأشعة."
+  },
+  {
+    "id": "inst-4",
+    "email": "amal.elsayed@radlog.example",
+    "username": "dramal",
+    "nickName": "د. أمل السيد",
+    "role": "INSTRUCTOR",
+    "country": "EG",
+    "timezone": "Africa/Cairo",
+    "bio": "استشارية الأشعة المقطعية CT، محاضرة في كلية الطب جامعة عين شمس."
+  },
+  {
+    "id": "inst-5",
+    "email": "khaled.mahmoud@radlog.example",
+    "username": "drkhaled",
+    "nickName": "د. خالد محمود",
+    "role": "INSTRUCTOR",
+    "country": "EG",
+    "timezone": "Africa/Cairo",
+    "bio": "استشاري الأشعة العلاجية والأورام، أبحاث منشورة في دوريات عالمية محكمة."
+  },
+  {
+    "id": "inst-6",
+    "email": "laila.nabil@radlog.example",
+    "username": "drlaila",
+    "nickName": "د. ليلى نبيل",
+    "role": "INSTRUCTOR",
+    "country": "EG",
+    "timezone": "Africa/Cairo",
+    "bio": "متخصصة في أشعة الأطفال (Pediatric Radiology)، خبرة في مستشفى أبو الريش الجامعي."
+  },
+  {
+    "id": "inst-7",
+    "email": "hesham.reda@radlog.example",
+    "username": "drhesham",
+    "nickName": "د. هشام رضا",
+    "role": "INSTRUCTOR",
+    "country": "EG",
+    "timezone": "Africa/Cairo",
+    "bio": "أخصائي تشخيص أمراض الجهاز الهضمي والبطن بالأشعة."
+  },
+  {
+    "id": "inst-8",
+    "email": "fatma.zahraa@radlog.example",
+    "username": "drfatma",
+    "nickName": "د. فاطمة الزهراء",
+    "role": "INSTRUCTOR",
+    "country": "EG",
+    "timezone": "Africa/Cairo",
+    "bio": "استشارية في فيزياء الأشعة الطبية والسلامة الإشعاعية."
+  }
+]

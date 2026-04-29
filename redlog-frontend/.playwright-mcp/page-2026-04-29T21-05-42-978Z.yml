@@ -1,0 +1,64 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img [ref=e7]
+          - generic [ref=e13]: RADLOG
+        - generic [ref=e14]:
+          - heading "ابنِ خبرتك في الأشعة خطوة بخطوة." [level=1] [ref=e15]:
+            - text: ابنِ خبرتك في الأشعة
+            - text: خطوة بخطوة.
+          - paragraph [ref=e16]: منصة Radlog هي بيتك التعليمي لتعلم الأشعة التشخيصية والعلاجية، بمحاضرات مبسطة، اختبارات تفاعلية، ومجتمع نشط من الطلبة والمحاضرين.
+          - generic [ref=e17]:
+            - generic [ref=e18]:
+              - generic [ref=e19]: "+12"
+              - generic [ref=e20]: كورس متخصص
+            - generic [ref=e21]:
+              - generic [ref=e22]: +3,500
+              - generic [ref=e23]: طالب نشط
+            - generic [ref=e24]:
+              - generic [ref=e25]: 4.9★
+              - generic [ref=e26]: تقييم المنصة
+        - generic [ref=e27]: © 2026 Radlog. جميع الحقوق محفوظة.
+    - main [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - heading "أهلاً بعودتك" [level=2] [ref=e32]
+            - paragraph [ref=e33]: ادخل لمتابعة كورساتك ومناقشاتك في المجتمع.
+          - generic [ref=e34]:
+            - generic [ref=e35]:
+              - generic [ref=e37]: البريد الإلكتروني
+              - generic [ref=e38]:
+                - generic:
+                  - img
+                - textbox "البريد الإلكتروني" [ref=e39]:
+                  - /placeholder: example@email.com
+            - generic [ref=e40]:
+              - generic [ref=e42]: كلمة السر
+              - generic [ref=e43]:
+                - generic:
+                  - img
+                - textbox "كلمة السر" [ref=e44]:
+                  - /placeholder: ••••••••
+                - button "إظهار كلمة السر" [ref=e45] [cursor=pointer]:
+                  - img [ref=e46]
+            - generic [ref=e49]:
+              - generic [ref=e50] [cursor=pointer]:
+                - checkbox "تذكرني" [checked] [ref=e51]
+                - generic [ref=e52]: تذكرني
+              - link "نسيت كلمة السر؟" [ref=e53] [cursor=pointer]:
+                - /url: /auth/forgot-password
+            - button "تسجيل الدخول" [ref=e54] [cursor=pointer]:
+              - generic [ref=e55]: تسجيل الدخول
+              - img [ref=e56]
+            - generic [ref=e60]: أو
+            - button "الدخول بحساب Google" [ref=e62] [cursor=pointer]:
+              - img [ref=e63]
+              - generic [ref=e68]: الدخول بحساب Google
+        - generic [ref=e69]:
+          - text: ليس لديك حساب؟
+          - link "أنشئ حساباً جديداً" [ref=e70] [cursor=pointer]:
+            - /url: /auth/signup
+  - region "Notifications alt+T"

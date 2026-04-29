@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Radlog · منصة تعليم الأشعة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="components.jsx"></script>
+<script type="text/babel" src="screen-login.jsx"></script>
+<script type="text/babel" src="screen-dashboard.jsx"></script>
+<script type="text/babel" src="screen-player.jsx"></script>
+<script type="text/babel" src="screen-quiz.jsx"></script>
+<script type="text/babel" src="screen-chat.jsx"></script>
+<script type="text/babel" src="screen-settings.jsx"></script>
+<script type="text/babel" src="screen-course-landing.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+// Sample course data
+const COURSES = [
+  {
+    id: "c1",
+    title: "أساسيات الأشعة التشخيصية للمبتدئين",
+    short: "RD",
+    category: "أساسيات",
+    instructor: "د. سامي حسن",
+    color: "#3B6FA8", color2: "#0E2A47",
+    progress: 34, totalLessons: 28, completedLessons: 9,
+    rating: 4.8, students: "2,340", duration: "8 ساعات",
+    nextLesson: "أنواع الأشعة الطبية المستخدمة",
+    badge: "الأكثر طلباً",
+  },
+  {
+    id: "c2",
+    title: "تشخيص أمراض الصدر بالأشعة",
+    short: "CR",
+    category: "أشعة تشخيصية",
+    instructor: "د. منى فاروق",
+    color: "#0284C7", color2: "#0E4F7C",
+    progress: 67, totalLessons: 22, completedLessons: 15,
+    rating: 4.9, students: "1,820", duration: "10 ساعات",
+    nextLesson: "الالتهاب الرئوي بأنواعه المختلفة",
+  },
+  {
+    id: "c3",
+    title: "MRI: الأساسيات والتطبيقات السريرية",
+    short: "MR",
+    category: "MRI",
+    instructor: "د. كريم عبدالله",
+    color: "#7C3AED", color2: "#4C1D95",
+    progress: 12, totalLessons: 35, completedLessons: 4,
+    rating: 4.7, students: "1,240", duration: "12 ساعات",
+    nextLesson: "مبدأ عمل الرنين المغناطيسي",
+  },
+  {
+    id: "c4",
+    title: "الأشعة المقطعية CT - من الصفر للاحتراف",
+    short: "CT",
+    category: "CT Scan",
+    instructor: "د. أمل السيد",
+    color: "#16A34A", color2: "#14532D",
+    rating: 4.8, students: "980", duration: "9 ساعات",
+  },
+  {
+    id: "c5",
+    title: "الأشعة العلاجية للأورام",
+    short: "RT",
+    category: "أشعة علاجية",
+    instructor: "د. خالد محمود",
+    color: "#DC2626", color2: "#7F1D1D",
+    rating: 4.6, students: "640", duration: "11 ساعات",
+    badge: "جديد",
+  },
+  {
+    id: "c6",
+    title: "Pediatric Radiology - أشعة الأطفال",
+    short: "PR",
+    category: "أشعة تشخيصية",
+    instructor: "د. ليلى نبيل",
+    color: "#D97706", color2: "#78350F",
+    rating: 4.9, students: "520", duration: "7 ساعات",
+  },
+  {
+    id: "c7",
+    title: "تشخيص أمراض البطن بالأشعة",
+    short: "AB",
+    category: "أشعة تشخيصية",
+    instructor: "د. هشام رضا",
+    color: "#0891B2", color2: "#155E75",
+    rating: 4.7, students: "780", duration: "8 ساعات",
+  },
+  {
+    id: "c8",
+    title: "الجرعات الإشعاعية والسلامة",
+    short: "RS",
+    category: "أساسيات",
+    instructor: "د. فاطمة الزهراء",
+    color: "#475569", color2: "#1E293B",
+    rating: 4.5, students: "1,100", duration: "5 ساعات",
+  },
+];
+
+const NOTIFICATIONS_INIT = [
+  { title: "تم الرد على سؤالك", body: "د. سامي حسن رد على سؤالك في درس أنواع الأشعة الطبية", time: "منذ 5 دقائق", read: false },
+  { title: "فيديو جديد متاح", body: "تمت إضافة درس جديد في كورس تشخيص أمراض الصدر", time: "منذ ساعة", read: false },
+  { title: "تذكير: اختبار قادم", body: "اختبار الوحدة الثالثة غداً الساعة 8 مساءً", time: "منذ 3 ساعات", read: false },
+  { title: "إنجاز جديد!", body: "أكملت 50% من كورس تشخيص أمراض الصدر، استمر! 🎉", time: "أمس", read: true },
+  { title: "رسالة جديدة في المجتمع", body: "5 رسائل جديدة في كورس MRI الأساسيات", time: "أمس", read: true },
+];
+
+const App = () => {
+  const [authed, setAuthed] = useState(false);
+  const [screen, setScreen] = useState("dashboard");
+  const [activeCourse, setActiveCourse] = useState(null);
+  const [notifications, setNotifications] = useState(NOTIFICATIONS_INIT);
+
+  const navigate = (key) => {
+    setScreen(key);
+    if (key !== "player" && key !== "quiz") setActiveCourse(null);
+  };
+
+  const openCourse = (c) => {
+    setActiveCourse(c);
+    // Enrolled courses go straight to player; un-enrolled show the landing page
+    setScreen(c.progress !== undefined ? "player" : "landing");
+  };
+
+  const enrollAndOpen = () => {
+    if (activeCourse) {
+      activeCourse.progress = 0;
+      activeCourse.totalLessons = activeCourse.totalLessons || 28;
+      activeCourse.completedLessons = 0;
+      setScreen("player");
+    }
+  };
+
+  if (!authed) {
+    return <LoginScreen onLogin={() => setAuthed(true)} />;
+  }
+
+  // Full-screen experiences (no shell)
+  if (screen === "landing" && activeCourse) {
+    return <CourseLandingScreen
+      course={activeCourse}
+      onBack={() => navigate("browse")}
+      onEnroll={enrollAndOpen}
+    />;
+  }
+  if (screen === "player" && activeCourse) {
+    return <CoursePlayer
+      course={activeCourse}
+      onBack={() => navigate("dashboard")}
+      onOpenQuiz={() => setScreen("quiz")}
+    />;
+  }
+  if (screen === "quiz") {
+    return <QuizScreen onExit={() => setScreen("player")} />;
+  }
+
+  return (
+    <div className="app">
+      <Sidebar current={screen} onNavigate={navigate} />
+      <main style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+        <Topbar
+          onNavigate={navigate}
+          currentScreen={screen}
+          onLogout={() => setAuthed(false)}
+          notifications={notifications}
+          setNotifications={setNotifications}
+        />
+        <div style={{ flex: 1 }}>
+          {screen === "dashboard" && <DashboardScreen courses={COURSES} onOpenCourse={openCourse} onNavigate={navigate} />}
+          {screen === "browse" && <BrowseScreen courses={COURSES} onOpenCourse={openCourse} />}
+          {screen === "my-courses" && <MyCoursesScreen courses={COURSES} onOpenCourse={openCourse} />}
+          {screen === "chat" && <ChatScreen courses={COURSES} />}
+          {screen === "settings" && <SettingsScreen />}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

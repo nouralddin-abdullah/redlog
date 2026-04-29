@@ -1,0 +1,47 @@
+[
+  {
+    "id": "cat-basics",
+    "name": "أساسيات",
+    "slug": "basics",
+    "description": "كورسات تأسيسية في علم الأشعة لطلبة الطب والمبتدئين",
+    "icon": "book",
+    "colorPrimary": "#3B6FA8",
+    "colorSecondary": "#0E2A47"
+  },
+  {
+    "id": "cat-diagnostic",
+    "name": "أشعة تشخيصية",
+    "slug": "diagnostic-radiology",
+    "description": "تشخيص الأمراض والإصابات باستخدام الفحوصات الإشعاعية المختلفة",
+    "icon": "search",
+    "colorPrimary": "#0284C7",
+    "colorSecondary": "#0E4F7C"
+  },
+  {
+    "id": "cat-therapeutic",
+    "name": "أشعة علاجية",
+    "slug": "therapeutic-radiology",
+    "description": "العلاج الإشعاعي للأورام والأمراض",
+    "icon": "zap",
+    "colorPrimary": "#DC2626",
+    "colorSecondary": "#7F1D1D"
+  },
+  {
+    "id": "cat-mri",
+    "name": "MRI",
+    "slug": "mri",
+    "description": "الرنين المغناطيسي - الأساسيات والتطبيقات السريرية",
+    "icon": "magnet",
+    "colorPrimary": "#7C3AED",
+    "colorSecondary": "#4C1D95"
+  },
+  {
+    "id": "cat-ct",
+    "name": "CT Scan",
+    "slug": "ct-scan",
+    "description": "الأشعة المقطعية المحوسبة بكافة تطبيقاتها",
+    "icon": "scan",
+    "colorPrimary": "#16A34A",
+    "colorSecondary": "#14532D"
+  }
+]

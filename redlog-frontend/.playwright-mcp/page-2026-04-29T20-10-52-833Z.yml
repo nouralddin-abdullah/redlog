@@ -1,0 +1,83 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - img [ref=e9]
+          - generic [ref=e15]: RADLOG
+        - generic [ref=e16]:
+          - generic [ref=e17]: تسجيل الدخول
+          - generic [ref=e18]: 01/02
+      - generic [ref=e19]:
+        - generic [ref=e20]:
+          - generic [ref=e23]: Radlog · Education
+          - heading "ابنِ خبرتك في الأشعة خطوة بخطوة." [level=1] [ref=e24]:
+            - text: ابنِ خبرتك في الأشعة
+            - text: خطوة بخطوة.
+          - paragraph [ref=e25]: منصة Radlog هي بيتك التعليمي لتعلم الأشعة التشخيصية والعلاجية، بمحاضرات مبسطة، اختبارات تفاعلية، ومجتمع نشط من الطلبة والمحاضرين.
+        - generic [ref=e26]:
+          - generic [ref=e27]:
+            - generic [ref=e28]: "+12"
+            - generic [ref=e29]: كورس متخصص
+          - generic [ref=e30]:
+            - generic [ref=e31]: +3,500
+            - generic [ref=e32]: طالب نشط
+          - generic [ref=e33]:
+            - generic [ref=e34]: 4.9★
+            - generic [ref=e35]: تقييم المنصة
+      - generic [ref=e36]:
+        - generic [ref=e37]: © 2026 Radlog. جميع الحقوق محفوظة.
+        - generic [ref=e38]: RAD · 001 — AUTH
+    - main [ref=e39]:
+      - generic [ref=e40]:
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - heading "أهلاً بعودتك" [level=2] [ref=e43]
+            - paragraph [ref=e44]: ادخل لمتابعة كورساتك ومناقشاتك في المجتمع.
+          - generic [ref=e45]:
+            - generic [ref=e46]:
+              - generic [ref=e48]: البريد الإلكتروني
+              - generic [ref=e49]:
+                - generic:
+                  - img
+                - textbox "البريد الإلكتروني" [ref=e50]:
+                  - /placeholder: example@email.com
+            - generic [ref=e51]:
+              - generic [ref=e53]: كلمة السر
+              - generic [ref=e54]:
+                - generic:
+                  - img
+                - textbox "كلمة السر" [ref=e55]:
+                  - /placeholder: ••••••••
+                - button "إظهار كلمة السر" [ref=e56] [cursor=pointer]:
+                  - img [ref=e57]
+            - generic [ref=e60]:
+              - generic [ref=e61] [cursor=pointer]:
+                - checkbox "تذكرني" [checked] [ref=e62]
+                - generic [ref=e63]: تذكرني
+              - link "نسيت كلمة السر؟" [ref=e64] [cursor=pointer]:
+                - /url: /auth/forgot-password
+            - button "تسجيل الدخول" [ref=e65] [cursor=pointer]:
+              - generic [ref=e66]: تسجيل الدخول
+              - img [ref=e67]
+            - generic [ref=e71]: أو
+            - button "الدخول بحساب Google" [ref=e73] [cursor=pointer]:
+              - img [ref=e74]
+              - generic [ref=e79]: الدخول بحساب Google
+        - generic [ref=e80]:
+          - text: ليس لديك حساب؟
+          - link "أنشئ حساباً جديداً" [ref=e81] [cursor=pointer]:
+            - /url: /auth/signup
+      - generic [ref=e82]:
+        - text: باستخدامك المنصة فأنت توافق على
+        - link "شروط الاستخدام" [ref=e83] [cursor=pointer]:
+          - /url: "#"
+        - text: و
+        - link "سياسة الخصوصية" [ref=e84] [cursor=pointer]:
+          - /url: "#"
+        - text: .
+  - region "Notifications alt+T"
+  - generic [ref=e85]:
+    - img [ref=e87]
+    - button "Open Tanstack query devtools" [ref=e135] [cursor=pointer]:
+      - img [ref=e136]

@@ -1,120 +1,272 @@
-import { Star } from 'lucide-react';
-import type { Course } from '@/features/courses/types';
-import { formatRating, formatStudents } from '@/features/courses/utils';
-import { Avatar } from '@/shared/components/ui/Avatar';
+import { useMemo, useState } from 'react';
+import { Loader2, X } from 'lucide-react';
+import { toast } from 'sonner';
+
+import type { Course, CreateReviewInput, StarRating } from '@/features/courses/types';
+import {
+  useCourseAccess,
+  useCreateReview,
+  useDeleteReview,
+  useMyReview,
+  useReviewsInfinite,
+  useReviewsSummary,
+  useUpdateReview,
+} from '@/features/courses/hooks';
+import { Alert } from '@/shared/components/ui/Alert';
 import { Button } from '@/shared/components/ui/Button';
+import { HttpError } from '@/shared/api/client';
+import { formatRating, formatStudents } from '@/features/courses/utils';
 
-/**
- * Placeholder reviews — these match the reference's hardcoded list. Once the
- * `/api/courses/:slug/reviews` endpoint exists, swap these for live data.
- */
-const PLACEHOLDER_REVIEWS = [
-  {
-    user: 'سارة علي',
-    rating: 5,
-    time: 'منذ أسبوع',
-    text: 'أفضل كورس درسته في الأشعة، الشرح واضح جداً والمحاضر بيوصل المعلومة ببساطة. الحالات العملية ممتازة وزودتني خبرة كبيرة.',
-  },
-  {
-    user: 'محمد خالد',
-    rating: 5,
-    time: 'منذ أسبوعين',
-    text: 'الكورس ده غير حياتي العملية. المحتوى منظم بشكل ممتاز، والاختبارات بعد كل وحدة بتثبت المعلومة. أنصح بيه أي طالب أشعة.',
-  },
-  {
-    user: 'ليلى أحمد',
-    rating: 4,
-    time: 'منذ شهر',
-    text: 'محتوى قوي جداً، بس كنت أتمنى يكون فيه شرح أكثر للأشعة المقطعية المتقدمة. عموماً أداء ممتاز ويستحق التجربة.',
-  },
-];
-
-/** Placeholder rating distribution — needs an aggregate field on the course. */
-const PLACEHOLDER_BREAKDOWN: ReadonlyArray<{ stars: number; percent: number }> = [
-  { stars: 5, percent: 78 },
-  { stars: 4, percent: 18 },
-  { stars: 3, percent: 3 },
-  { stars: 2, percent: 1 },
-  { stars: 1, percent: 0 },
-];
+import { RatingBreakdown } from './RatingBreakdown';
+import { ReviewCard } from './ReviewCard';
+import { ReviewForm } from './ReviewForm';
+import { StarRating as Stars } from './StarRating';
 
 interface ReviewsTabProps {
   course: Course;
 }
 
 export function ReviewsTab({ course }: ReviewsTabProps) {
+  const slug = course.slug;
+
+  const summaryQuery = useReviewsSummary(slug);
+  const accessQuery = useCourseAccess(slug);
+  const myReviewQuery = useMyReview(slug);
+  const [filter, setFilter] = useState<StarRating | null>(null);
+  const reviewsQuery = useReviewsInfinite({
+    slug,
+    rating: filter ?? undefined,
+  });
+
+  const [editing, setEditing] = useState(false);
+
+  const createMut = useCreateReview(slug);
+  const updateMut = useUpdateReview(slug);
+  const deleteMut = useDeleteReview(slug);
+
+  const ownReview = myReviewQuery.data ?? null;
+
+  const otherReviews = useMemo(() => {
+    const all = reviewsQuery.data?.pages.flatMap((p) => p.items) ?? [];
+    return ownReview ? all.filter((r) => r.id !== ownReview.id) : all;
+  }, [reviewsQuery.data, ownReview]);
+
+  const enrolled = accessQuery.data?.state === 'ENROLLED';
+
+  const handleCreate = async (input: CreateReviewInput) => {
+    try {
+      await createMut.mutateAsync(input);
+      toast.success('تم نشر تقييمك');
+    } catch {
+      /* surfaced via mutation.error */
+    }
+  };
+
+  const handleEditSubmit = async (input: CreateReviewInput) => {
+    if (!ownReview) return;
+    try {
+      await updateMut.mutateAsync({ id: ownReview.id, input });
+      toast.success('تم حفظ التعديل');
+      setEditing(false);
+    } catch {
+      /* surfaced */
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!ownReview) return;
+    if (!window.confirm('هل تريد حذف تقييمك؟ لا يمكن التراجع عن هذا الإجراء.')) {
+      return;
+    }
+    try {
+      await deleteMut.mutateAsync(ownReview.id);
+      toast.success('تم حذف التقييم');
+    } catch (e) {
+      toast.error(
+        e instanceof HttpError ? e.message : 'تعذّر حذف التقييم',
+      );
+    }
+  };
+
   return (
     <div>
-      {/* Summary */}
-      <div
-        className="mb-8 grid grid-cols-1 gap-8 rounded-[var(--radius-lg)] bg-[var(--color-surface-soft)] p-6 sm:grid-cols-[200px_1fr]"
-      >
-        <div className="text-center">
-          <div className="font-display text-[56px] font-extrabold leading-none text-[var(--color-ink-900)]">
-            {formatRating(course.rating)}
-          </div>
-          <div className="my-2 flex justify-center gap-0.5 text-[#F59E0B]">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star key={i} className="size-[18px] fill-current" />
-            ))}
-          </div>
-          <div className="text-[13px] text-[var(--color-ink-500)]">
-            {formatStudents(course.reviewsCount)} تقييم
-          </div>
-        </div>
+      {/* ---------- Summary ---------- */}
+      {summaryQuery.isLoading && <SummarySkeleton />}
+      {summaryQuery.error && (
+        <Alert tone="warning" className="mb-6">
+          تعذّر تحميل ملخص التقييمات
+          {summaryQuery.error instanceof HttpError
+            ? ` — ${summaryQuery.error.message}`
+            : ''}
+        </Alert>
+      )}
+      {summaryQuery.data && (
+        <Summary
+          average={summaryQuery.data.average}
+          total={summaryQuery.data.total}
+          summary={summaryQuery.data}
+          selected={filter}
+          onSelect={setFilter}
+        />
+      )}
 
-        <div className="flex-1">
-          {PLACEHOLDER_BREAKDOWN.map((b) => (
-            <div
-              key={b.stars}
-              className="mb-1.5 flex items-center gap-2.5 text-[13px]"
-            >
-              <span className="min-w-[18px]">{b.stars}★</span>
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--color-surface-muted)]">
-                <div
-                  className="h-full"
-                  style={{ width: `${b.percent}%`, background: '#F59E0B' }}
-                />
-              </div>
-              <span className="min-w-[36px] text-[var(--color-ink-500)]">
-                {b.percent}%
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Reviews list */}
-      <div className="flex flex-col gap-4">
-        {PLACEHOLDER_REVIEWS.map((r, i) => (
-          <div
-            key={i}
-            className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-white p-5"
+      {/* ---------- Active filter chip ---------- */}
+      {filter !== null && (
+        <div className="mb-4 flex items-center gap-2 text-[13px] text-[var(--color-ink-600)]">
+          <span>
+            عرض تقييمات <strong className="font-bold text-[var(--color-ink-900)]">{filter}★</strong> فقط
+          </span>
+          <button
+            type="button"
+            onClick={() => setFilter(null)}
+            className="inline-flex items-center gap-1 rounded-full bg-[var(--color-surface-muted)] px-2.5 py-1 text-[12px] font-semibold transition-colors hover:bg-[var(--color-line)]"
           >
-            <div className="mb-2.5 flex items-center gap-3">
-              <Avatar name={r.user} size={44} />
-              <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-bold">{r.user}</div>
-                <div className="flex items-center gap-2 text-[12px] text-[var(--color-ink-500)]">
-                  <span className="flex text-[#F59E0B]">
-                    {Array.from({ length: r.rating }).map((_, j) => (
-                      <Star key={j} className="size-3 fill-current" />
-                    ))}
-                  </span>
-                  <span>· {r.time}</span>
-                </div>
-              </div>
-            </div>
-            <p className="m-0 text-[14px] leading-[1.7] text-[var(--color-ink-700)]">
-              {r.text}
-            </p>
-          </div>
-        ))}
+            <X className="size-3" /> إزالة الفلتر
+          </button>
+        </div>
+      )}
 
-        <Button variant="ghost" className="self-start">
-          عرض المزيد من التقييمات
-        </Button>
-      </div>
+      {/* ---------- Write / your review ---------- */}
+      {!myReviewQuery.isLoading &&
+        (ownReview ? (
+          editing ? (
+            <ReviewForm
+              defaultValue={{
+                rating: ownReview.rating as StarRating,
+                comment: ownReview.comment,
+              }}
+              submitting={updateMut.isPending}
+              errorMessage={errorMessage(updateMut.error)}
+              onSubmit={handleEditSubmit}
+              onCancel={() => setEditing(false)}
+              className="mb-4"
+            />
+          ) : (
+            <div className="mb-4">
+              <ReviewCard
+                review={ownReview}
+                isOwn
+                onEdit={() => setEditing(true)}
+                onDelete={handleDelete}
+                deleting={deleteMut.isPending}
+              />
+            </div>
+          )
+        ) : enrolled ? (
+          <ReviewForm
+            submitting={createMut.isPending}
+            errorMessage={errorMessage(createMut.error)}
+            onSubmit={handleCreate}
+            className="mb-4"
+          />
+        ) : null)}
+
+      {/* ---------- Reviews list ---------- */}
+      {reviewsQuery.error ? (
+        <Alert tone="danger">
+          تعذّر تحميل التقييمات
+          {reviewsQuery.error instanceof HttpError
+            ? ` — ${reviewsQuery.error.message}`
+            : ''}
+        </Alert>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {reviewsQuery.isLoading && <ReviewsSkeleton />}
+
+          {otherReviews.map((r) => (
+            <ReviewCard key={r.id} review={r} />
+          ))}
+
+          {!reviewsQuery.isLoading &&
+            otherReviews.length === 0 &&
+            !ownReview && <EmptyState filter={filter} />}
+
+          {reviewsQuery.hasNextPage && (
+            <Button
+              variant="ghost"
+              className="self-start"
+              loading={reviewsQuery.isFetchingNextPage}
+              onClick={() => reviewsQuery.fetchNextPage()}
+            >
+              عرض المزيد من التقييمات
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
+}
+
+/* =================== sub-components =================== */
+
+function Summary({
+  average,
+  total,
+  summary,
+  selected,
+  onSelect,
+}: {
+  average: number;
+  total: number;
+  summary: import('@/features/courses/types').ReviewSummary;
+  selected: StarRating | null;
+  onSelect: (s: StarRating | null) => void;
+}) {
+  return (
+    <div className="mb-6 grid grid-cols-1 gap-8 rounded-[var(--radius-lg)] bg-[var(--color-surface-soft)] p-6 sm:grid-cols-[200px_1fr]">
+      <div className="text-center">
+        <div className="font-display text-[56px] font-extrabold leading-none text-[var(--color-ink-900)]">
+          {formatRating(String(average))}
+        </div>
+        <div className="my-2 flex justify-center">
+          <Stars value={Math.round(average)} size={18} />
+        </div>
+        <div className="text-[13px] text-[var(--color-ink-500)]">
+          {formatStudents(total)} تقييم
+        </div>
+      </div>
+
+      <RatingBreakdown summary={summary} selected={selected} onSelect={onSelect} />
+    </div>
+  );
+}
+
+function SummarySkeleton() {
+  return (
+    <div className="mb-6 h-[180px] animate-pulse rounded-[var(--radius-lg)] bg-[var(--color-surface-muted)]" />
+  );
+}
+
+function ReviewsSkeleton() {
+  return (
+    <>
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-white p-5"
+        >
+          <Loader2 className="size-5 animate-spin text-[var(--color-ink-400)]" />
+          <span className="text-[13px] text-[var(--color-ink-500)]">جاري التحميل…</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function EmptyState({ filter }: { filter: StarRating | null }) {
+  return (
+    <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--color-line-strong)] bg-white py-12 text-center">
+      <p className="m-0 text-[14px] text-[var(--color-ink-500)]">
+        {filter !== null
+          ? `لا توجد تقييمات بـ ${filter}★ حتى الآن.`
+          : 'لا توجد تقييمات بعد — كن أول من يقيّم.'}
+      </p>
+    </div>
+  );
+}
+
+function errorMessage(error: unknown): string | null {
+  if (!error) return null;
+  if (error instanceof HttpError) return error.message;
+  return 'حدث خطأ غير متوقع';
 }

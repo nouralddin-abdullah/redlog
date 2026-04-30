@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { useCourse, useCurriculum } from '@/features/courses/hooks';
+import {
+  useCourse,
+  useCourseAccess,
+  useCurriculum,
+} from '@/features/courses/hooks';
 import { CourseHero } from '@/features/courses/components/landing/CourseHero';
 import { CoursePreviewCard } from '@/features/courses/components/landing/CoursePreviewCard';
 import {
@@ -13,6 +17,7 @@ import { OverviewTab } from '@/features/courses/components/landing/OverviewTab';
 import { CurriculumTab } from '@/features/courses/components/landing/CurriculumTab';
 import { InstructorTab } from '@/features/courses/components/landing/InstructorTab';
 import { ReviewsTab } from '@/features/courses/components/landing/ReviewsTab';
+import { PaymentDialog } from '@/features/courses/components/landing/PaymentDialog';
 import { Alert } from '@/shared/components/ui/Alert';
 import { Button } from '@/shared/components/ui/Button';
 import { Logo } from '@/shared/components/branding/Logo';
@@ -23,7 +28,9 @@ export function CourseLandingPage() {
   const navigate = useNavigate();
   const courseQuery = useCourse(slug);
   const curriculumQuery = useCurriculum(slug);
+  const accessQuery = useCourseAccess(slug);
   const [tab, setTab] = useState<LandingTabKey>('overview');
+  const [paymentOpen, setPaymentOpen] = useState(false);
 
   const goBack = () => {
     if (window.history.length > 1) navigate(-1);
@@ -51,8 +58,12 @@ export function CourseLandingPage() {
   const modules = curriculumQuery.data;
 
   const handleEnroll = () => {
-    // Enrollment endpoint not wired yet
-    toast.message('قريباً — سنفتح الاشتراك في الخطوة القادمة.');
+    setPaymentOpen(true);
+  };
+
+  const handleStartLearning = () => {
+    // The student-side player isn't wired yet — placeholder.
+    toast.message('قريباً — مشغّل الدروس.');
   };
 
   const handlePreview = () => {
@@ -69,7 +80,10 @@ export function CourseLandingPage() {
             course={course}
             modules={modules}
             curriculumLoading={curriculumQuery.isLoading}
+            access={accessQuery.data}
+            accessLoading={accessQuery.isLoading}
             onEnroll={handleEnroll}
+            onStartLearning={handleStartLearning}
             onPreview={handlePreview}
           />
         }
@@ -90,9 +104,14 @@ export function CourseLandingPage() {
           {tab === 'instructor' && <InstructorTab course={course} />}
           {tab === 'reviews' && <ReviewsTab course={course} />}
         </div>
-        {/* Empty column — preview card is sticky inside the hero. */}
         <div className="hidden lg:block" />
       </div>
+
+      <PaymentDialog
+        open={paymentOpen}
+        course={course}
+        onClose={() => setPaymentOpen(false)}
+      />
     </div>
   );
 }

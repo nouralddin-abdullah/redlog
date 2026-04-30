@@ -92,3 +92,89 @@ export interface CourseModule {
   createdAt: string;
   updatedAt: string;
 }
+
+/* ===================== Reviews ===================== */
+
+export type StarRating = 1 | 2 | 3 | 4 | 5;
+
+export interface ReviewUser {
+  id: string;
+  name: string;
+  avatar: string | null;
+}
+
+export interface Review {
+  id: string;
+  rating: number;
+  comment: string | null;
+  userId: string;
+  courseId: string;
+  user: ReviewUser;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReviewsListResponse {
+  items: Review[];
+  meta: PaginationMeta;
+}
+
+export interface ListReviewsParams {
+  page?: number;
+  limit?: number;
+  order?: 'asc' | 'desc';
+  rating?: StarRating;
+}
+
+export interface ReviewSummary {
+  average: number;
+  total: number;
+  breakdown: Record<'1' | '2' | '3' | '4' | '5', number>;
+}
+
+export interface CreateReviewInput {
+  rating: StarRating;
+  comment: string | null;
+}
+
+/* ===================== Access ===================== */
+
+export type AccessState = 'NONE' | 'PENDING' | 'REJECTED' | 'ENROLLED';
+
+export type PaymentRequestStatus = 'pending' | 'approved' | 'rejected';
+
+export interface PaymentRequest {
+  id: string;
+  userId: string;
+  courseId: string;
+  amount: string;
+  senderPhoneNumber: string;
+  screenshotUrl: string;
+  status: PaymentRequestStatus;
+  adminNote: string | null;
+  reviewedByUserId: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CourseAccess {
+  state: AccessState;
+  paymentRequest: PaymentRequest | null;
+  /** Enrollment record when state is ENROLLED. Shape pending — keep as unknown. */
+  enrollment: unknown | null;
+}
+
+/* ===================== Manual payment ===================== */
+
+export interface PaymentInfo {
+  recipientPhone: string;
+  amount: string;
+  currency: string;
+  instructions: string;
+}
+
+export interface CreatePaymentRequestInput {
+  senderPhoneNumber: string;
+  screenshot: File;
+}

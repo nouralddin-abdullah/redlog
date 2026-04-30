@@ -8,6 +8,7 @@ import { SignUpPage } from '@/features/auth/pages/SignUpPage';
 import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
 import { BrowseCoursesPage } from '@/features/courses/pages/BrowseCoursesPage';
 import { CourseLandingPage } from '@/features/courses/pages/CourseLandingPage';
+import { CoursePlayerPage } from '@/features/courses/pages/CoursePlayerPage';
 import { ComingSoonPage } from '@/shared/components/ComingSoonPage';
 
 export const router = createBrowserRouter([
@@ -24,6 +25,7 @@ export const router = createBrowserRouter([
     children: [
       // Full-screen experience — no sidebar/topbar, matching the reference.
       { path: '/courses/:slug', element: <CourseLandingPage /> },
+      { path: '/courses/:slug/learn', element: <CoursePlayerPage /> },
 
       // Everything else lives inside the app shell.
       {

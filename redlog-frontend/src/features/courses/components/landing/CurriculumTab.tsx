@@ -3,7 +3,6 @@ import {
   ChevronDown,
   ChevronLeft,
   Play,
-  FileText,
   ListChecks,
   Lock,
 } from 'lucide-react';
@@ -132,13 +131,10 @@ function LessonIcon({ type }: { type: Lesson['type'] }) {
       return <Play className={className} aria-hidden />;
     case 'quiz':
       return <ListChecks className={className} aria-hidden />;
-    case 'file':
-      return <FileText className={className} aria-hidden />;
   }
 }
 
 function formatLessonMeta(lesson: Lesson): string {
-  if (lesson.type === 'file') return 'PDF';
   if (lesson.durationSeconds <= 0) return '';
   return formatLessonDuration(lesson.durationSeconds);
 }

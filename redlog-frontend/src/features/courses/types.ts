@@ -70,7 +70,7 @@ export interface ListCoursesParams {
   instructorId?: string;
 }
 
-export type LessonType = 'video' | 'file' | 'quiz';
+export type LessonType = 'video' | 'quiz';
 
 export interface Lesson {
   id: string;
@@ -143,6 +143,7 @@ export type AccessState = 'NONE' | 'PENDING' | 'REJECTED' | 'ENROLLED';
 
 export type PaymentRequestStatus = 'pending' | 'approved' | 'rejected';
 
+/** Full shape — returned by POST /courses/:id/payment-requests and admin endpoints. */
 export interface PaymentRequest {
   id: string;
   userId: string;
@@ -158,9 +159,22 @@ export interface PaymentRequest {
   updatedAt: string;
 }
 
+/** Subset embedded in GET /courses/:slug/access — no userId/courseId/reviewedByUserId/updatedAt. */
+export type PaymentRequestSummary = Pick<
+  PaymentRequest,
+  | 'id'
+  | 'status'
+  | 'amount'
+  | 'senderPhoneNumber'
+  | 'screenshotUrl'
+  | 'adminNote'
+  | 'createdAt'
+  | 'reviewedAt'
+>;
+
 export interface CourseAccess {
   state: AccessState;
-  paymentRequest: PaymentRequest | null;
+  paymentRequest: PaymentRequestSummary | null;
   /** Enrollment record when state is ENROLLED. Shape pending — keep as unknown. */
   enrollment: unknown | null;
 }

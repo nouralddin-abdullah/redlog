@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -7,6 +7,7 @@ import {
   useCourseAccess,
   useCurriculum,
 } from '@/features/courses/hooks';
+import { useLesson } from '@/features/lessons/hooks';
 import { CourseHero } from '@/features/courses/components/landing/CourseHero';
 import { CoursePreviewCard } from '@/features/courses/components/landing/CoursePreviewCard';
 import {
@@ -18,6 +19,8 @@ import { CurriculumTab } from '@/features/courses/components/landing/CurriculumT
 import { InstructorTab } from '@/features/courses/components/landing/InstructorTab';
 import { ReviewsTab } from '@/features/courses/components/landing/ReviewsTab';
 import { PaymentDialog } from '@/features/courses/components/landing/PaymentDialog';
+import { PaymentRequestDetailsDialog } from '@/features/courses/components/landing/PaymentRequestDetailsDialog';
+import { PreviewVideoDialog } from '@/features/courses/components/landing/PreviewVideoDialog';
 import { Alert } from '@/shared/components/ui/Alert';
 import { Button } from '@/shared/components/ui/Button';
 import { Logo } from '@/shared/components/branding/Logo';
@@ -31,6 +34,22 @@ export function CourseLandingPage() {
   const accessQuery = useCourseAccess(slug);
   const [tab, setTab] = useState<LandingTabKey>('overview');
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [requestDetailsOpen, setRequestDetailsOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  /** First video lesson flagged as a public preview. */
+  const previewLesson = useMemo(
+    () =>
+      curriculumQuery.data
+        ?.flatMap((m) => m.lessons)
+        .find((l) => l.isPreview && l.type === 'video') ?? null,
+    [curriculumQuery.data],
+  );
+
+  /** Fetch the preview lesson's detail so we can use its Bunny thumbnail
+   *  on the card hero and as the dialog's loading poster. */
+  const previewLessonDetail = useLesson(previewLesson?.id);
+  const previewThumbnailUrl = previewLessonDetail.data?.thumbnailUrl ?? null;
 
   const goBack = () => {
     if (window.history.length > 1) navigate(-1);
@@ -62,12 +81,15 @@ export function CourseLandingPage() {
   };
 
   const handleStartLearning = () => {
-    // The student-side player isn't wired yet — placeholder.
-    toast.message('قريباً — مشغّل الدروس.');
+    navigate(`/courses/${course.slug}/learn`);
   };
 
   const handlePreview = () => {
-    toast.message('قريباً — معاينة الفيديو.');
+    if (!previewLesson) {
+      toast.message('لا توجد معاينة متاحة لهذا الكورس.');
+      return;
+    }
+    setPreviewOpen(true);
   };
 
   return (
@@ -82,8 +104,10 @@ export function CourseLandingPage() {
             curriculumLoading={curriculumQuery.isLoading}
             access={accessQuery.data}
             accessLoading={accessQuery.isLoading}
+            previewThumbnailUrl={previewThumbnailUrl}
             onEnroll={handleEnroll}
             onStartLearning={handleStartLearning}
+            onShowRequestDetails={() => setRequestDetailsOpen(true)}
             onPreview={handlePreview}
           />
         }
@@ -111,6 +135,17 @@ export function CourseLandingPage() {
         open={paymentOpen}
         course={course}
         onClose={() => setPaymentOpen(false)}
+      />
+      <PaymentRequestDetailsDialog
+        open={requestDetailsOpen}
+        request={accessQuery.data?.paymentRequest ?? null}
+        onClose={() => setRequestDetailsOpen(false)}
+      />
+      <PreviewVideoDialog
+        open={previewOpen}
+        lesson={previewLesson}
+        posterUrl={previewThumbnailUrl}
+        onClose={() => setPreviewOpen(false)}
       />
     </div>
   );

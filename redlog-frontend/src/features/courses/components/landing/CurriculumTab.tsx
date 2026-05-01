@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Check,
   ChevronDown,
   ChevronLeft,
   Play,
@@ -17,9 +18,19 @@ interface CurriculumTabProps {
   course: Course;
   modules: CourseModule[] | undefined;
   loading: boolean;
+  /**
+   * IDs of lessons the user has completed. Only populated when the viewer is
+   * enrolled — anonymous / non-enrolled visitors render the locked-icon UI.
+   */
+  completedLessonIds?: ReadonlySet<string>;
 }
 
-export function CurriculumTab({ course, modules, loading }: CurriculumTabProps) {
+export function CurriculumTab({
+  course,
+  modules,
+  loading,
+  completedLessonIds,
+}: CurriculumTabProps) {
   const [openModuleId, setOpenModuleId] = useState<string | null>(
     modules?.[0]?.id ?? null,
   );
@@ -86,6 +97,8 @@ export function CurriculumTab({ course, modules, loading }: CurriculumTabProps) 
                       key={lesson.id}
                       lesson={lesson}
                       isLast={i === mod.lessons.length - 1}
+                      completed={completedLessonIds?.has(lesson.id) ?? false}
+                      enrolled={completedLessonIds !== undefined}
                     />
                   ))}
                 </div>
@@ -98,7 +111,18 @@ export function CurriculumTab({ course, modules, loading }: CurriculumTabProps) 
   );
 }
 
-function LessonRow({ lesson, isLast }: { lesson: Lesson; isLast: boolean }) {
+function LessonRow({
+  lesson,
+  isLast,
+  completed,
+  enrolled,
+}: {
+  lesson: Lesson;
+  isLast: boolean;
+  completed: boolean;
+  /** When true, the viewer is enrolled — show completion state instead of locks. */
+  enrolled: boolean;
+}) {
   return (
     <div
       className="flex items-center gap-3 px-5 py-3 text-[14px]"
@@ -106,15 +130,24 @@ function LessonRow({ lesson, isLast }: { lesson: Lesson; isLast: boolean }) {
         borderBottom: isLast ? 'none' : '1px solid var(--color-line)',
       }}
     >
-      <LessonIcon type={lesson.type} />
+      {completed ? (
+        <span
+          className="flex size-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-success-soft)] text-[var(--color-success)]"
+          aria-label="مكتمل"
+        >
+          <Check className="size-3" aria-hidden />
+        </span>
+      ) : (
+        <LessonIcon type={lesson.type} />
+      )}
       <div className="flex-1 truncate text-[var(--color-ink-800)]">{lesson.title}</div>
-      {lesson.isPreview ? (
+      {!enrolled && lesson.isPreview ? (
         <button className="text-[13px] font-semibold text-[var(--color-brand-blue)] hover:text-[var(--color-brand-blue-700)]">
           معاينة
         </button>
-      ) : (
+      ) : !enrolled ? (
         <Lock className="size-3.5 text-[var(--color-ink-400)]" aria-hidden />
-      )}
+      ) : null}
       <div
         className="min-w-[70px] text-end text-[13px] text-[var(--color-ink-500)]"
       >

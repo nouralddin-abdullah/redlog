@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { quizApi } from './api';
 import type { Attempt, AttemptResult, SaveAnswerInput } from './types';
+import { coursesKeys } from '@/features/courses/hooks';
+import { lessonProgressKeys } from '@/features/lesson-progress/hooks';
+import { enrollmentsKeys } from '@/features/enrollments/hooks';
+import { certificatesKeys } from '@/features/certificates/hooks';
 
 export const quizKeys = {
   all: ['quiz'] as const,
@@ -90,14 +94,39 @@ export function useSaveAnswer(attemptId: string) {
  * Finalizes the attempt. The mutation result is the graded shape; we also
  * write it into the attempt cache so `useAttempt` immediately returns the
  * submitted form (no second network round-trip).
+ *
+ * When `courseSlug` is provided, a passing result triggers cache
+ * invalidation for the course's progress + access + my-enrollments — the
+ * backend marks the quiz lesson complete server-side, so the curriculum
+ * checkmarks and progress bar need to refetch.
  */
-export function useSubmitAttempt(attemptId: string, lessonId: string) {
+export function useSubmitAttempt(
+  attemptId: string,
+  lessonId: string,
+  courseSlug?: string,
+) {
   const qc = useQueryClient();
   return useMutation<AttemptResult>({
     mutationFn: () => quizApi.submitAttempt(attemptId),
     onSuccess: (result) => {
       qc.setQueryData(quizKeys.attempt(attemptId), result);
       void qc.invalidateQueries({ queryKey: quizKeys.byLesson(lessonId) });
+
+      // Passing a quiz auto-completes the quiz lesson on the backend. Bring
+      // the per-course progress + access + my-enrollments caches in line.
+      // (Failed attempts never affect progress, so nothing to do.)
+      if (result.passed && courseSlug) {
+        void qc.invalidateQueries({
+          queryKey: lessonProgressKeys.course(courseSlug),
+        });
+        void qc.invalidateQueries({ queryKey: coursesKeys.access(courseSlug) });
+        void qc.invalidateQueries({ queryKey: enrollmentsKeys.all });
+        // The passed quiz might have been the last lesson in the course —
+        // in which case the backend just issued a certificate. We don't get
+        // course-completion signal from the quiz response, so refetch
+        // unconditionally on a pass. Cheap: at most one request per submit.
+        void qc.invalidateQueries({ queryKey: certificatesKeys.all });
+      }
     },
   });
 }

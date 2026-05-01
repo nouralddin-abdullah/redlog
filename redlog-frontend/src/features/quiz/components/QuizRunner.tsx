@@ -25,6 +25,8 @@ interface QuizRunnerProps {
   title: string;
   quiz: QuizDefinition;
   attempt: AttemptInProgress;
+  /** Forwarded to the submit hook for cache invalidation on a pass. */
+  courseSlug?: string;
   /** Caller hides the surrounding chrome (lesson info, etc.) while taking. */
   onExit: () => void;
 }
@@ -39,7 +41,13 @@ const ARABIC_LETTERS = ['أ', 'ب', 'ج', 'د', 'هـ', 'و', 'ز', 'ح', 'ط', 
  * Auto-saves on every option pick (optimistic via the cached attempt).
  * Auto-submits when the timer reaches zero.
  */
-export function QuizRunner({ title, quiz, attempt, onExit }: QuizRunnerProps) {
+export function QuizRunner({
+  title,
+  quiz,
+  attempt,
+  courseSlug,
+  onExit,
+}: QuizRunnerProps) {
   const sortedQuestions = useMemo(
     () => [...quiz.questions].sort((a, b) => a.order - b.order),
     [quiz.questions],
@@ -55,7 +63,7 @@ export function QuizRunner({ title, quiz, attempt, onExit }: QuizRunnerProps) {
   }, [attempt.answers]);
 
   const saveAnswer = useSaveAnswer(attempt.id);
-  const submitAttempt = useSubmitAttempt(attempt.id, quiz.lessonId);
+  const submitAttempt = useSubmitAttempt(attempt.id, quiz.lessonId, courseSlug);
 
   const remainingMs = useCountdown(attempt.expiresAt);
   const remainingSec = Math.floor(remainingMs / 1000);

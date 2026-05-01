@@ -172,11 +172,25 @@ export type PaymentRequestSummary = Pick<
   | 'reviewedAt'
 >;
 
+/**
+ * Slim enrollment projection embedded on the access response. Intentionally
+ * does NOT include `currentLessonId` or `progress` — for those, call
+ * `GET /courses/:slug/progress` separately. This keeps `/access` light and
+ * cacheable.
+ */
+export interface AccessEnrollment {
+  id: string;
+  enrolledAt: string;
+  lastAccessedAt: string | null;
+  /** Non-null only when every lesson in the course is complete. */
+  completedAt: string | null;
+}
+
 export interface CourseAccess {
   state: AccessState;
   paymentRequest: PaymentRequestSummary | null;
-  /** Enrollment record when state is ENROLLED. Shape pending — keep as unknown. */
-  enrollment: unknown | null;
+  /** Present when state is ENROLLED. */
+  enrollment: AccessEnrollment | null;
 }
 
 /* ===================== Manual payment ===================== */

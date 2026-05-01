@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import {
+  Award,
   LayoutDashboard,
   Compass,
   PlayCircle,
@@ -21,6 +22,7 @@ const PRIMARY: NavItem[] = [
   { to: '/dashboard', label: 'لوحة التحكم', icon: LayoutDashboard },
   { to: '/courses', label: 'استكشف الكورسات', icon: Compass },
   { to: '/my-courses', label: 'كورساتي', icon: PlayCircle },
+  { to: '/certificates', label: 'شهاداتي', icon: Award },
   { to: '/community', label: 'مجتمع الكورسات', icon: Users },
 ];
 

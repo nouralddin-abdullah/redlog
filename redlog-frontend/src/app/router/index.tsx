@@ -9,9 +9,19 @@ import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
 import { BrowseCoursesPage } from '@/features/courses/pages/BrowseCoursesPage';
 import { CourseLandingPage } from '@/features/courses/pages/CourseLandingPage';
 import { CoursePlayerPage } from '@/features/courses/pages/CoursePlayerPage';
+import { MyCoursesPage } from '@/features/enrollments/pages/MyCoursesPage';
+import { MyCertificatesPage } from '@/features/certificates/pages/MyCertificatesPage';
+import { CertificatePage } from '@/features/certificates/pages/CertificatePage';
+import { VerifyCertificatePage } from '@/features/certificates/pages/VerifyCertificatePage';
 import { ComingSoonPage } from '@/shared/components/ComingSoonPage';
 
 export const router = createBrowserRouter([
+  // Public certificate verification — usable without auth. An employer or
+  // school checking a candidate's printed cert lands here directly. Sits
+  // outside both Public-only and Protected guards so authed users hit the
+  // same page (they may be verifying someone else's).
+  { path: '/verify', element: <VerifyCertificatePage /> },
+  { path: '/verify/:code', element: <VerifyCertificatePage /> },
   {
     element: <PublicOnlyRoute />,
     children: [
@@ -26,6 +36,9 @@ export const router = createBrowserRouter([
       // Full-screen experience — no sidebar/topbar, matching the reference.
       { path: '/courses/:slug', element: <CourseLandingPage /> },
       { path: '/courses/:slug/learn', element: <CoursePlayerPage /> },
+      // Single-certificate render is full-screen so window.print() captures
+      // a clean canvas (no app shell on the page).
+      { path: '/certificates/:id', element: <CertificatePage /> },
 
       // Everything else lives inside the app shell.
       {
@@ -42,15 +55,8 @@ export const router = createBrowserRouter([
             ),
           },
           { path: '/courses', element: <BrowseCoursesPage /> },
-          {
-            path: '/my-courses',
-            element: (
-              <ComingSoonPage
-                title="كورساتي"
-                description="ستظهر هنا الكورسات التي اشتركت بها مع تقدمك في كل منها."
-              />
-            ),
-          },
+          { path: '/my-courses', element: <MyCoursesPage /> },
+          { path: '/certificates', element: <MyCertificatesPage /> },
           {
             path: '/community',
             element: (

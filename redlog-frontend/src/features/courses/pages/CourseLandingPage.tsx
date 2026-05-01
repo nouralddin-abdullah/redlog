@@ -7,6 +7,7 @@ import {
   useCourseAccess,
   useCurriculum,
 } from '@/features/courses/hooks';
+import { useCourseProgress } from '@/features/lesson-progress/hooks';
 import { useLesson } from '@/features/lessons/hooks';
 import { CourseHero } from '@/features/courses/components/landing/CourseHero';
 import { CoursePreviewCard } from '@/features/courses/components/landing/CoursePreviewCard';
@@ -32,6 +33,12 @@ export function CourseLandingPage() {
   const courseQuery = useCourse(slug);
   const curriculumQuery = useCurriculum(slug);
   const accessQuery = useCourseAccess(slug);
+  const isEnrolled = accessQuery.data?.state === 'ENROLLED';
+  const progressQuery = useCourseProgress(slug, { enabled: isEnrolled });
+  const completedLessonIds = useMemo(
+    () => new Set(progressQuery.data?.completedLessonIds ?? []),
+    [progressQuery.data?.completedLessonIds],
+  );
   const [tab, setTab] = useState<LandingTabKey>('overview');
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [requestDetailsOpen, setRequestDetailsOpen] = useState(false);
@@ -81,7 +88,14 @@ export function CourseLandingPage() {
   };
 
   const handleStartLearning = () => {
-    navigate(`/courses/${course.slug}/learn`);
+    // Resume on the user's last opened lesson when we have one. Falls back
+    // to the player's own default (first lesson) when progress hasn't loaded
+    // yet or the user hasn't opened anything.
+    const resume = progressQuery.data?.currentLessonId;
+    const target = resume
+      ? `/courses/${course.slug}/learn?lesson=${resume}`
+      : `/courses/${course.slug}/learn`;
+    navigate(target);
   };
 
   const handlePreview = () => {
@@ -104,6 +118,7 @@ export function CourseLandingPage() {
             curriculumLoading={curriculumQuery.isLoading}
             access={accessQuery.data}
             accessLoading={accessQuery.isLoading}
+            progress={progressQuery.data}
             previewThumbnailUrl={previewThumbnailUrl}
             onEnroll={handleEnroll}
             onStartLearning={handleStartLearning}
@@ -123,6 +138,7 @@ export function CourseLandingPage() {
               course={course}
               modules={modules}
               loading={curriculumQuery.isLoading}
+              completedLessonIds={isEnrolled ? completedLessonIds : undefined}
             />
           )}
           {tab === 'instructor' && <InstructorTab course={course} />}

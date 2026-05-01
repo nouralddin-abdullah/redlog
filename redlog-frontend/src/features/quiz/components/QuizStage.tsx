@@ -14,6 +14,12 @@ interface QuizStageProps {
   title: string;
   lessonId: string;
   /**
+   * Course slug — forwarded to the submit mutation so a passing attempt can
+   * invalidate the per-course progress / access / my-enrollments caches.
+   * (Backend marks the quiz lesson complete server-side on pass.)
+   */
+  courseSlug?: string;
+  /**
    * Notifies the player page when the quiz transitions in/out of "active"
    * mode (taking or reviewing). Active mode hides the surrounding lesson
    * chrome so the quiz can use the full main column.
@@ -32,7 +38,12 @@ interface QuizStageProps {
  * other chrome (lesson info, tabs) while the student is taking or
  * reviewing the quiz.
  */
-export function QuizStage({ title, lessonId, onActiveChange }: QuizStageProps) {
+export function QuizStage({
+  title,
+  lessonId,
+  courseSlug,
+  onActiveChange,
+}: QuizStageProps) {
   const quiz = useQuiz(lessonId);
   const [activeAttemptId, setActiveAttemptId] = useState<string | null>(null);
   const attempt = useAttempt(activeAttemptId);
@@ -107,6 +118,7 @@ export function QuizStage({ title, lessonId, onActiveChange }: QuizStageProps) {
       title={title}
       quiz={quiz.data}
       attempt={attempt.data}
+      courseSlug={courseSlug}
       onExit={() => setActiveAttemptId(null)}
     />
   );

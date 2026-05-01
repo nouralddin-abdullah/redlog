@@ -5,13 +5,18 @@ import {
   useParams,
   useSearchParams,
 } from 'react-router-dom';
-import { ChevronRight, Lock } from 'lucide-react';
+import { ChevronRight, CircleCheck, Lock } from 'lucide-react';
 import {
   useCourse,
   useCourseAccess,
   useCurriculum,
 } from '@/features/courses/hooks';
 import { useLesson, useLessonPlayback } from '@/features/lessons/hooks';
+import {
+  useCourseProgress,
+  useMarkLessonComplete,
+} from '@/features/lesson-progress/hooks';
+import { useMyCertificates } from '@/features/certificates/hooks';
 import { useCurrentUser } from '@/features/auth/hooks';
 import {
   BunnyPlayer,
@@ -37,7 +42,26 @@ export function CoursePlayerPage() {
   const courseQuery = useCourse(slug);
   const curriculumQuery = useCurriculum(slug);
   const accessQuery = useCourseAccess(slug);
+  const isEnrolled = accessQuery.data?.state === 'ENROLLED';
+  const progressQuery = useCourseProgress(slug, { enabled: isEnrolled });
+  const markComplete = useMarkLessonComplete(slug ?? '');
+  const courseCompleted = Boolean(progressQuery.data?.completedAt);
+  // Only fire once the course is actually complete — keeps the network
+  // quiet while the user is mid-course and avoids prefetching a list they
+  // won't need until they're done.
+  const certificatesQuery = useMyCertificates({ enabled: courseCompleted });
+  const courseId = courseQuery.data?.id;
+  const certificateId =
+    courseCompleted && courseId
+      ? (certificatesQuery.data?.find((c) => c.courseId === courseId)?.id ??
+        null)
+      : null;
   const { data: currentUser } = useCurrentUser();
+
+  const completedLessonIds = useMemo(
+    () => new Set(progressQuery.data?.completedLessonIds ?? []),
+    [progressQuery.data?.completedLessonIds],
+  );
 
   /** Bunny player handle — used to seek when the user clicks a note's timestamp. */
   const playerRef = useRef<BunnyPlayerHandle>(null);
@@ -61,14 +85,22 @@ export function CoursePlayerPage() {
     [curriculumQuery.data],
   );
 
+  const resumeLessonId = progressQuery.data?.currentLessonId ?? null;
+
   const currentLesson: Lesson | null = useMemo(() => {
     if (!allLessons.length) return null;
     if (lessonIdParam) {
       const found = allLessons.find((l) => l.id === lessonIdParam);
       if (found) return found;
     }
+    // Resume from where the user left off (Udemy-style) when no explicit
+    // lesson is in the URL. Falls back to the first lesson for fresh enrollments.
+    if (resumeLessonId) {
+      const resume = allLessons.find((l) => l.id === resumeLessonId);
+      if (resume) return resume;
+    }
     return allLessons[0] ?? null;
-  }, [allLessons, lessonIdParam]);
+  }, [allLessons, lessonIdParam, resumeLessonId]);
 
   const currentModule = useMemo(() => {
     if (!currentLesson || !curriculumQuery.data) return null;
@@ -92,6 +124,30 @@ export function CoursePlayerPage() {
   useEffect(() => {
     setCurrentTime(0);
   }, [currentLesson?.id]);
+
+  // Auto-mark a video lesson complete once the viewer has watched >=90%.
+  // Idempotent on the backend, but we additionally guard with a per-lesson
+  // ref so we don't spam the network on every tick past the threshold (the
+  // player emits ~1 update/sec). Cleared when the lesson changes.
+  const autoCompletedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    if (!isEnrolled) return;
+    if (!currentLesson || currentLesson.type !== 'video') return;
+    const duration = currentLesson.durationSeconds;
+    if (duration <= 0) return;
+    if (completedLessonIds.has(currentLesson.id)) return;
+    if (autoCompletedRef.current.has(currentLesson.id)) return;
+    if (currentTime / duration < 0.9) return;
+
+    autoCompletedRef.current.add(currentLesson.id);
+    markComplete.mutate(currentLesson.id);
+  }, [
+    currentTime,
+    currentLesson,
+    completedLessonIds,
+    isEnrolled,
+    markComplete,
+  ]);
 
   /** True while the student is taking or reviewing a quiz — hides the
    *  surrounding lesson info / mini topbar so the quiz fills the screen. */
@@ -186,6 +242,7 @@ export function CoursePlayerPage() {
           <QuizStage
             title={currentLesson.title}
             lessonId={currentLesson.id}
+            courseSlug={course.slug}
             onActiveChange={setQuizActive}
           />
         )}
@@ -195,6 +252,9 @@ export function CoursePlayerPage() {
             lesson={currentLesson}
             moduleTitle={currentModule?.title}
             instructor={course.instructor.name}
+            completed={
+              currentLesson ? completedLessonIds.has(currentLesson.id) : false
+            }
           />
         )}
 
@@ -212,6 +272,21 @@ export function CoursePlayerPage() {
         <PlayerSidebar
           modules={curriculumQuery.data}
           currentLessonId={currentLesson?.id ?? null}
+          completedLessonIds={completedLessonIds}
+          progress={
+            progressQuery.data
+              ? {
+                  completedCount: progressQuery.data.completedCount,
+                  totalLessons: progressQuery.data.totalLessons,
+                  percent: progressQuery.data.percent,
+                }
+              : undefined
+          }
+          certificate={
+            isEnrolled
+              ? { unlocked: courseCompleted, certificateId }
+              : undefined
+          }
           onSelectLesson={selectLesson}
         />
       )}
@@ -283,10 +358,12 @@ function LessonInfo({
   lesson,
   moduleTitle,
   instructor,
+  completed,
 }: {
   lesson: Lesson | null;
   moduleTitle?: string;
   instructor: string;
+  completed: boolean;
 }) {
   if (!lesson) {
     return (
@@ -296,21 +373,28 @@ function LessonInfo({
     );
   }
   return (
-    <div className="border-b border-[var(--color-line)] bg-white px-6 py-5">
-      <h2 className="m-0 mb-1.5 text-[20px] font-bold text-[var(--color-ink-900)]">
-        {lesson.title}
-      </h2>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[var(--color-ink-500)]">
-        {moduleTitle && <span>{moduleTitle}</span>}
-        {moduleTitle && <span aria-hidden>•</span>}
-        <span>{instructor}</span>
-        {lesson.durationSeconds > 0 && lesson.type === 'video' && (
-          <>
-            <span aria-hidden>•</span>
-            <span>{formatLessonDuration(lesson.durationSeconds)} دقيقة</span>
-          </>
-        )}
+    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--color-line)] bg-white px-6 py-5">
+      <div className="min-w-0 flex-1">
+        <h2 className="m-0 mb-1.5 text-[20px] font-bold text-[var(--color-ink-900)]">
+          {lesson.title}
+        </h2>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-[var(--color-ink-500)]">
+          {moduleTitle && <span>{moduleTitle}</span>}
+          {moduleTitle && <span aria-hidden>•</span>}
+          <span>{instructor}</span>
+          {lesson.durationSeconds > 0 && lesson.type === 'video' && (
+            <>
+              <span aria-hidden>•</span>
+              <span>{formatLessonDuration(lesson.durationSeconds)} دقيقة</span>
+            </>
+          )}
+        </div>
       </div>
+      {completed && (
+        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-success-soft)] px-3 py-1 text-[12.5px] font-semibold text-[var(--color-success)]">
+          <CircleCheck className="size-3.5" aria-hidden /> مكتمل
+        </span>
+      )}
     </div>
   );
 }

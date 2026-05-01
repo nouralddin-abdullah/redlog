@@ -14,6 +14,7 @@ import type {
   CourseAccess,
   CourseModule,
 } from '@/features/courses/types';
+import type { CourseProgress } from '@/features/lesson-progress/types';
 import {
   discountPercent,
   formatHours,
@@ -29,6 +30,11 @@ interface CoursePreviewCardProps {
   access: CourseAccess | undefined;
   /** True while access query is loading. */
   accessLoading: boolean;
+  /**
+   * Per-course progress for enrolled viewers — drives the progress bar +
+   * "Continue learning" copy. Undefined for non-enrolled visitors.
+   */
+  progress?: CourseProgress;
   /** Bunny thumbnail of the first preview video — preferred over course.thumbnail. */
   previewThumbnailUrl?: string | null;
   /** Called when the user clicks "subscribe" (NONE) or "retry" (REJECTED). */
@@ -47,12 +53,21 @@ export function CoursePreviewCard({
   curriculumLoading,
   access,
   accessLoading,
+  progress,
   previewThumbnailUrl,
   onEnroll,
   onStartLearning,
   onShowRequestDetails,
   onPreview,
 }: CoursePreviewCardProps) {
+  const isEnrolled = access?.state === 'ENROLLED';
+  const showProgressBar = isEnrolled && progress && progress.totalLessons > 0;
+  // Once a user has started a course, the CTA copy shifts from "Start learning"
+  // to "Continue learning" (Udemy convention). We treat any completed lesson
+  // OR a stored currentLessonId as "started".
+  const hasStarted = Boolean(
+    progress && (progress.completedCount > 0 || progress.currentLessonId),
+  );
   const allLessons = (modules ?? []).flatMap((m) => m.lessons);
   const videoLessons = allLessons.filter((l) => l.type === 'video');
   const quizLessons = allLessons.filter((l) => l.type === 'quiz');
@@ -67,6 +82,7 @@ export function CoursePreviewCard({
   const discount = discountPercent(course.price, course.originalPrice);
   const cta = primaryCta({
     state: access?.state ?? 'NONE',
+    hasStarted,
     onEnroll,
     onStartLearning,
     onShowRequestDetails,
@@ -105,26 +121,53 @@ export function CoursePreviewCard({
       </button>
 
       <div className="p-5">
-        <div className="mb-1 flex items-baseline gap-2.5">
-          <span className="text-[28px] font-extrabold text-[var(--color-ink-900)]">
-            {formatPrice(course.price)}
-          </span>
-          {course.originalPrice && (
-            <span className="text-[16px] text-[var(--color-ink-400)] line-through">
-              {formatPrice(course.originalPrice)}
-            </span>
-          )}
-          {discount !== null && (
-            <span className="ms-auto rounded-full bg-[var(--color-success-soft)] px-2.5 py-1 text-[12px] font-semibold text-[var(--color-success)]">
-              خصم {discount}%
-            </span>
-          )}
-        </div>
+        {!isEnrolled && (
+          <>
+            <div className="mb-1 flex items-baseline gap-2.5">
+              <span className="text-[28px] font-extrabold text-[var(--color-ink-900)]">
+                {formatPrice(course.price)}
+              </span>
+              {course.originalPrice && (
+                <span className="text-[16px] text-[var(--color-ink-400)] line-through">
+                  {formatPrice(course.originalPrice)}
+                </span>
+              )}
+              {discount !== null && (
+                <span className="ms-auto rounded-full bg-[var(--color-success-soft)] px-2.5 py-1 text-[12px] font-semibold text-[var(--color-success)]">
+                  خصم {discount}%
+                </span>
+              )}
+            </div>
 
-        <div className="mb-4 flex items-center gap-1.5 text-[12px] font-semibold text-[var(--color-danger)]">
-          <AlarmClock className="size-3.5" aria-hidden />
-          <span>ينتهي العرض خلال يومين</span>
-        </div>
+            <div className="mb-4 flex items-center gap-1.5 text-[12px] font-semibold text-[var(--color-danger)]">
+              <AlarmClock className="size-3.5" aria-hidden />
+              <span>ينتهي العرض خلال يومين</span>
+            </div>
+          </>
+        )}
+
+        {showProgressBar && progress && (
+          <div className="mb-4">
+            <div className="mb-1.5 flex items-center justify-between text-[13px]">
+              <span className="text-[var(--color-ink-700)]">
+                تقدمك في الكورس
+              </span>
+              <span className="font-semibold text-[var(--color-ink-900)]">
+                {progress.percent}%
+              </span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-[var(--color-surface-muted)]">
+              <div
+                className="h-full rounded-full bg-[var(--color-success)] transition-[width] duration-300"
+                style={{ width: `${progress.percent}%` }}
+              />
+            </div>
+            <div className="mt-1.5 text-[12px] text-[var(--color-ink-500)]">
+              {progress.completedCount} من {progress.totalLessons} درس مكتمل
+              {progress.completedAt && ' · أتممت الكورس 🎉'}
+            </div>
+          </div>
+        )}
 
         <Button
           block
@@ -184,6 +227,8 @@ export function CoursePreviewCard({
 
 interface CtaArgs {
   state: CourseAccess['state'];
+  /** True once the user has opened or completed at least one lesson. */
+  hasStarted: boolean;
   onEnroll: () => void;
   onStartLearning?: () => void;
   onShowRequestDetails?: () => void;
@@ -199,6 +244,7 @@ interface CtaConfig {
 
 function primaryCta({
   state,
+  hasStarted,
   onEnroll,
   onStartLearning,
   onShowRequestDetails,
@@ -219,7 +265,7 @@ function primaryCta({
       };
     case 'ENROLLED':
       return {
-        label: 'ابدأ التعلم',
+        label: hasStarted ? 'متابعة التعلم' : 'ابدأ التعلم',
         variant: 'primary',
         icon: <PlayCircle className="size-4" />,
         onClick: () => onStartLearning?.(),

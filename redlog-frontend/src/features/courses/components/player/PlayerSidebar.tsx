@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
+  Award,
   Check,
   ChevronDown,
   ChevronLeft,
+  Lock,
   Play,
   ListChecks,
 } from 'lucide-react';
@@ -13,8 +16,28 @@ import { cn } from '@/shared/lib/cn';
 interface PlayerSidebarProps {
   modules: CourseModule[];
   currentLessonId: string | null;
-  /** Lesson IDs the user has finished. (Plumbed for when a `/progress` endpoint lands.) */
+  /** Lesson IDs the user has finished. */
   completedLessonIds?: ReadonlySet<string>;
+  /**
+   * Optional progress block — when present, renders a percent + bar in the
+   * header. Pass undefined for non-enrolled previews (no header bar).
+   */
+  progress?: {
+    completedCount: number;
+    totalLessons: number;
+    percent: number;
+  };
+  /**
+   * Certificate state for the row at the bottom of the sidebar.
+   *  - undefined: don't render the row at all (non-enrolled preview).
+   *  - `unlocked: false`: course incomplete, render greyed-out lock.
+   *  - `unlocked: true`: course complete; `certificateId` may briefly be null
+   *    if the cert list hasn't refetched yet — render a "preparing" state.
+   */
+  certificate?: {
+    unlocked: boolean;
+    certificateId: string | null;
+  };
   onSelectLesson: (lesson: Lesson) => void;
 }
 
@@ -22,6 +45,8 @@ export function PlayerSidebar({
   modules,
   currentLessonId,
   completedLessonIds,
+  progress,
+  certificate,
   onSelectLesson,
 }: PlayerSidebarProps) {
   /** Open the module that contains the current lesson by default; allow user to expand others. */
@@ -56,9 +81,28 @@ export function PlayerSidebar({
         <div className="text-[13px] text-[var(--color-ink-500)]">
           {modules.length} وحدات · {totalLessons} درس
         </div>
+        {progress && progress.totalLessons > 0 && (
+          <div className="mt-3">
+            <div className="mb-1.5 flex items-center justify-between text-[12px] text-[var(--color-ink-500)]">
+              <span>
+                {progress.completedCount} من {progress.totalLessons} مكتمل
+              </span>
+              <span className="font-semibold text-[var(--color-ink-700)]">
+                {progress.percent}%
+              </span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-[var(--color-surface-muted)]">
+              <div
+                className="h-full rounded-full bg-[var(--color-success)] transition-[width] duration-300"
+                style={{ width: `${progress.percent}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      {modules.map((mod) => {
+      <div className="flex-1">
+        {modules.map((mod) => {
         const open = mod.id === openModuleId;
         return (
           <div key={mod.id} className="border-b border-[var(--color-line)]">
@@ -100,7 +144,99 @@ export function PlayerSidebar({
           </div>
         );
       })}
+      </div>
+
+      {certificate && <CertificateRow {...certificate} />}
     </aside>
+  );
+}
+
+/**
+ * Pinned at the bottom of the sidebar — always visible while the user is in
+ * the course. Locked state communicates that finishing the course unlocks a
+ * tangible reward; unlocked state deep-links into the certificate render.
+ */
+function CertificateRow({
+  unlocked,
+  certificateId,
+}: {
+  unlocked: boolean;
+  certificateId: string | null;
+}) {
+  // Locked: course incomplete. Render as a static (non-clickable) row so the
+  // user sees what they're working toward.
+  if (!unlocked) {
+    return (
+      <div className="border-t border-[var(--color-line)] bg-[var(--color-surface-soft)] px-5 py-4">
+        <div className="flex items-start gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[var(--color-surface-muted)] text-[var(--color-ink-400)]">
+            <Lock className="size-4" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <span className="text-[13.5px] font-semibold text-[var(--color-ink-700)]">
+                شهادة الإتمام
+              </span>
+              <span className="rounded-full bg-[var(--color-surface-muted)] px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-[var(--color-ink-500)]">
+                مقفلة
+              </span>
+            </div>
+            <div className="mt-0.5 text-[12px] leading-relaxed text-[var(--color-ink-500)]">
+              أتمم جميع الدروس للحصول على شهادة موثّقة.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Unlocked but cert id not yet known — happens for ~one render after the
+  // course completes and before /me/certificates refetches. Show the unlocked
+  // styling but don't make it a link until we have a target.
+  if (!certificateId) {
+    return (
+      <div className="border-t-2 border-[var(--color-brand-blue)] bg-[var(--color-brand-blue-50)] px-5 py-4">
+        <div className="flex items-start gap-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[var(--color-brand-blue)] text-white">
+            <Award className="size-4" aria-hidden />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[13.5px] font-semibold text-[var(--color-brand-navy)]">
+              شهادة الإتمام
+            </div>
+            <div className="mt-0.5 text-[12px] text-[var(--color-ink-600)]">
+              جارٍ إصدار شهادتك…
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      to={`/certificates/${certificateId}`}
+      className="group block border-t-2 border-[var(--color-brand-blue)] bg-[var(--color-brand-blue-50)] px-5 py-4 transition-colors hover:bg-[var(--color-brand-blue-100)]"
+    >
+      <div className="flex items-start gap-3">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[var(--color-brand-blue)] text-white shadow-[0_2px_6px_rgba(59,111,168,0.4)]">
+          <Award className="size-4" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[13.5px] font-semibold text-[var(--color-brand-navy)]">
+              شهادة الإتمام
+            </span>
+            <span className="rounded-full bg-[var(--color-success)] px-2 py-0.5 text-[10.5px] font-semibold uppercase tracking-wider text-white">
+              مفتوحة
+            </span>
+          </div>
+          <div className="mt-0.5 text-[12px] text-[var(--color-ink-700)] group-hover:text-[var(--color-brand-navy)]">
+            عرض الشهادة الآن →
+          </div>
+        </div>
+      </div>
+    </Link>
   );
 }
 

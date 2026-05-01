@@ -2,6 +2,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 import { PublicOnlyRoute } from './PublicOnlyRoute';
 import { ProtectedRoute } from './ProtectedRoute';
+import { InstructorRoute } from './InstructorRoute';
+import { RoleHomeRedirect } from './RoleHomeRedirect';
 import { AppShell } from '@/app/layouts/AppShell';
 import { SignInPage } from '@/features/auth/pages/SignInPage';
 import { SignUpPage } from '@/features/auth/pages/SignUpPage';
@@ -13,6 +15,15 @@ import { MyCoursesPage } from '@/features/enrollments/pages/MyCoursesPage';
 import { MyCertificatesPage } from '@/features/certificates/pages/MyCertificatesPage';
 import { CertificatePage } from '@/features/certificates/pages/CertificatePage';
 import { VerifyCertificatePage } from '@/features/certificates/pages/VerifyCertificatePage';
+import { InstructorShell } from '@/features/instructor/layouts/InstructorShell';
+import { InstructorDashboardPage } from '@/features/instructor/pages/InstructorDashboardPage';
+import { InstructorCoursesPage } from '@/features/instructor/pages/InstructorCoursesPage';
+import { NewCourseWizardPage } from '@/features/instructor/pages/NewCourseWizardPage';
+import { CourseEditorPage } from '@/features/instructor/pages/CourseEditorPage';
+import { NewLessonPage } from '@/features/instructor/pages/NewLessonPage';
+import { InstructorStudentsPage } from '@/features/instructor/pages/InstructorStudentsPage';
+import { InstructorEarningsPage } from '@/features/instructor/pages/InstructorEarningsPage';
+import { InstructorSettingsPage } from '@/features/instructor/pages/InstructorSettingsPage';
 import { ComingSoonPage } from '@/shared/components/ComingSoonPage';
 
 export const router = createBrowserRouter([
@@ -40,11 +51,41 @@ export const router = createBrowserRouter([
       // a clean canvas (no app shell on the page).
       { path: '/certificates/:id', element: <CertificatePage /> },
 
+      // Instructor area — gated to role=instructor|admin. Learners typing
+      // /instructor in the URL bar are bounced to /courses by InstructorRoute.
+      {
+        element: <InstructorRoute />,
+        children: [
+          {
+            path: '/instructor',
+            element: <InstructorShell />,
+            children: [
+              { index: true, element: <Navigate to="/instructor/dashboard" replace /> },
+              { path: 'dashboard', element: <InstructorDashboardPage /> },
+              { path: 'courses', element: <InstructorCoursesPage /> },
+              { path: 'courses/new', element: <NewCourseWizardPage /> },
+              { path: 'courses/:slug', element: <CourseEditorPage /> },
+              { path: 'courses/:slug/lessons/new', element: <NewLessonPage /> },
+              // Edit existing lesson — same form as create, detected via
+              // the `:lessonId` route param. Page-level mode-detection keeps
+              // both code paths in one component.
+              {
+                path: 'courses/:slug/lessons/:lessonId/edit',
+                element: <NewLessonPage />,
+              },
+              { path: 'students', element: <InstructorStudentsPage /> },
+              { path: 'earnings', element: <InstructorEarningsPage /> },
+              { path: 'settings', element: <InstructorSettingsPage /> },
+            ],
+          },
+        ],
+      },
+
       // Everything else lives inside the app shell.
       {
         element: <AppShell />,
         children: [
-          { path: '/', element: <Navigate to="/courses" replace /> },
+          { path: '/', element: <RoleHomeRedirect /> },
           {
             path: '/dashboard',
             element: (

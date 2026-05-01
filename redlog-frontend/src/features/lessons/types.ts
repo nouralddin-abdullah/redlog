@@ -29,13 +29,24 @@ export interface LessonDetail {
   updatedAt: string;
 }
 
-/** Shape pending — backend currently returns an empty array. */
+/**
+ * Lesson attachment — see `lesson-attachments-api.md`. Embedded on
+ * `LessonDetail.attachments` and also returned by the dedicated list /
+ * upload / rename / delete endpoints under `/lessons/:lessonId/attachments`
+ * + `/lesson-attachments/:id`.
+ *
+ * `fileSizeBytes` may come back as a JSON string (TypeORM returns Postgres
+ * `bigint` as string). Always coerce with `Number(...)` before formatting.
+ */
 export interface LessonAttachment {
-  id?: string;
-  name?: string;
-  url?: string;
-  size?: number;
-  mimeType?: string;
+  id: string;
+  title: string;
+  /** Public, permanent CDN URL — drop directly into `<a href>`. */
+  fileUrl: string;
+  mimeType: string;
+  /** May be string (bigint) or number — coerce with `Number(...)`. */
+  fileSizeBytes: number | string;
+  createdAt: string;
 }
 
 /** Response from GET /api/lessons/:id/playback. */

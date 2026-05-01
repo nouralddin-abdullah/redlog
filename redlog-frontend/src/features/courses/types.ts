@@ -36,8 +36,17 @@ export interface Course {
   reviewsCount: number;
   durationMinutes: number;
   totalLessons: number;
-  isPublished: boolean;
-  publishedAt: string;
+  /**
+   * Lifecycle status. The public catalog only ever returns `published`, but
+   * authenticated/instructor reads can see drafts and pending-review courses.
+   */
+  status: 'draft' | 'pending_review' | 'published' | 'rejected';
+  /** Stamped on first approval; preserved across unpublish/republish cycles. */
+  publishedAt: string | null;
+  submittedAt: string | null;
+  reviewedAt: string | null;
+  /** Admin's reason when status === 'rejected'. */
+  adminNote: string | null;
   categoryId: string;
   instructorId: string;
   category: Category;

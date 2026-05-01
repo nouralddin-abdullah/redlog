@@ -1,6 +1,7 @@
-import { NavLink } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import {
   Award,
+  GraduationCap,
   LayoutDashboard,
   Compass,
   PlayCircle,
@@ -9,6 +10,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Logo } from '@/shared/components/branding/Logo';
+import { useCurrentUser } from '@/features/auth/hooks';
 import { cn } from '@/shared/lib/cn';
 
 interface NavItem {
@@ -31,6 +33,9 @@ const SECONDARY: NavItem[] = [
 ];
 
 export function Sidebar() {
+  const { data: user } = useCurrentUser();
+  const canAuthor = user?.role === 'instructor' || user?.role === 'admin';
+
   return (
     <aside className="sticky top-0 hidden h-screen w-[280px] shrink-0 flex-col overflow-y-auto border-s border-[var(--color-line)] bg-white lg:flex">
       <div className="flex items-center gap-2.5 border-b border-[var(--color-line)] px-5 py-[18px]">
@@ -48,6 +53,29 @@ export function Sidebar() {
           <Item key={item.to} item={item} />
         ))}
       </nav>
+
+      {/* Cross-link to the authoring area for instructors. Hidden for
+          regular learners — they have nothing to author. */}
+      {canAuthor && (
+        <div className="border-t border-[var(--color-line)] p-4">
+          <Link
+            to="/instructor/dashboard"
+            className="flex items-start gap-3 rounded-[var(--radius-md)] border border-[var(--color-brand-blue-100)] bg-[var(--color-brand-blue-50)] p-3.5 transition-colors hover:bg-[var(--color-brand-blue-100)]"
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-[var(--color-brand-blue)] text-white">
+              <GraduationCap className="size-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[13px] font-bold text-[var(--color-brand-navy)]">
+                مساحة المحاضر
+              </div>
+              <div className="mt-0.5 text-[11.5px] text-[var(--color-ink-600)]">
+                إدارة كورساتك وأرباحك
+              </div>
+            </div>
+          </Link>
+        </div>
+      )}
 
       <div className="border-t border-[var(--color-line)] p-4">
         <div className="rounded-[var(--radius-md)] bg-[var(--color-brand-blue-50)] p-4 text-[13px]">
